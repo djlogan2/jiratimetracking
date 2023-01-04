@@ -97,8 +97,12 @@ public class JiraTimeTracking {
             String daptivProject = timeEntry.daptivProject == null ? null : timeEntry.daptivProject.toString();
             if (daptivProject == null) {
                 if (timeEntry.issueType.equals("Bug"))
-                    daptivProject = "Bug";
-                else daptivProject = "Enhancements";
+                    daptivProject = "102 Bugs: AAS";
+//                else if(false)
+//                    daptivProject = "112 Prod Support: AAS";
+//                else if(false)
+//                    daptivProject = "Non-Project Work";
+                else daptivProject = "119 Enhancements: AAS";
             }
             daptivUser.addSeconds(daptivProject, timeEntry.created, timeEntry.timeSpent);
         });
@@ -238,8 +242,8 @@ public class JiraTimeTracking {
             message.setSubject(subject);
             StringBuilder sb = new StringBuilder();
             sb.append("<table width='100%'>");
+            sb.append("<tr><td></td><td>Mon</td><td>Tue</td><td>Wed</td><td>Thu</td><td>Fri</td><td>Sat</td><td>Sun</td></tr>");
             daptivUser.getProjects().forEach((key, value) -> {
-                sb.append("<tr><td></td><td>Mon</td><td>Tue</td><td>Wed</td><td>Thu</td><td>Fri</td><td>Sat</td><td>Sun</td></tr>");
                 sb.append("<tr>");
                 sb.append("<td>").append(value.getDaptivProject()).append("</td>");
                 for (int x = 0; x < 7; x++)

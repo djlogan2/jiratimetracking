@@ -20,4 +20,14 @@ public class DaptivUserProject {
     public double getHour(int day) {
         return this.hours[day];
     }
+
+    public void setHours(int day, double i) {
+        this.hours[day] = i;
+    }
+
+    public void removeSeconds(ZonedDateTime date, int seconds) {
+        int day = date.getDayOfWeek().getValue() - 1;
+        this.hours[day] -= seconds / 3600.0;
+        if(this.hours[day] < 0.0) this.hours[day] = 0.0;
+    }
 }
