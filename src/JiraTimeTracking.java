@@ -247,7 +247,7 @@ public class JiraTimeTracking {
                 sb.append("<tr>");
                 sb.append("<td>").append(value.getDaptivProject()).append("</td>");
                 for (int x = 0; x < 7; x++)
-                    sb.append("<td>").append(value.getHour(x)).append("</td>");
+                    sb.append("<td>").append(String.format("%.2f", value.getHour(x))).append("</td>");
                 sb.append("</tr>");
             });
             sb.append("</table>");
