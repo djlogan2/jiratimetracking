@@ -33,13 +33,16 @@ public class JiraTimeTracking {
     private String jirapassword;
     private boolean test = true;
     private final HashMap<String, String> userToEmail = new HashMap<>();
+    private final HashMap<String, String> userConversion = new HashMap<>();
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private final DateTimeFormatter dateTimeFormatter1 = DateTimeFormatter.ISO_LOCAL_DATE;
     private final HashMap<String, DaptivUser> daptivUserHashMap = new HashMap<>();
+    private DaptivUser summary;
     private final ArrayList<TimeEntry> timeEntries = new ArrayList<>();
     private String jql;
     private LocalDate previousMonday;
     private LocalDate followingSunday;
+
 
     public static void main(String[] args) {
         JiraTimeTracking javaTimeTracking = new JiraTimeTracking();
@@ -74,6 +77,22 @@ public class JiraTimeTracking {
                             userToEmail.put(key, addr);
                         }
                     });
+            properties.keySet()
+                    .stream()
+                    .filter(key -> key.toString().startsWith("conversions."))
+                    .map(key -> ((String) key).split("\\.")[2])
+                    .distinct()
+                    .forEach(suffix -> {
+                        String propfrom = "conversions.from." + suffix;
+                        String propto = "conversions.to." + suffix;
+                        String from = properties.getProperty(propfrom);
+                        String to = properties.getProperty(propto);
+                        if(from == null || to == null) {
+                            System.out.println("Error adding " + propfrom + "=" + propfrom + ", " + propto + "=" + propto);
+                        } else {
+                            userConversion.put(from, to);
+                        }
+                    });
         } catch(IOException e) {
             throw new RuntimeException(e);
         }
@@ -81,6 +100,10 @@ public class JiraTimeTracking {
         int minusDays = now.getDayOfWeek().getValue() + 6;
         previousMonday = now.minusDays(minusDays);
         followingSunday = previousMonday.plusDays(6);
+
+        userToEmail.keySet().forEach(author -> daptivUserHashMap.put(author, new DaptivUser(author)));
+
+        summary = new DaptivUser(userToEmail.keySet());
 
         jql = "worklogDate >= '" + dateTimeFormatter1.format(previousMonday) + "' AND worklogDate <= '" + dateTimeFormatter1.format(followingSunday) + "'";
 
@@ -105,11 +128,13 @@ public class JiraTimeTracking {
                 else daptivProject = "119 Enhancements: AAS";
             }
             daptivUser.addSeconds(daptivProject, timeEntry.created, timeEntry.timeSpent);
+            summary.addSeconds(timeEntry.author, timeEntry.created, timeEntry.timeSpent);
         });
         daptivUserHashMap.forEach((author, user) -> {
             String emailAddress = userToEmail.get(author);
             sendDaptivEmail(user, emailAddress);
         });
+        sendDaptivEmail(summary, defaultaddress);
     }
 
     private Integer jiraCall(int startAt) {
@@ -165,7 +190,10 @@ public class JiraTimeTracking {
                                     timeEntry.issueType = issueType;
                                     timeEntry.daptivProject = epic == null ? null : epic.daptiv;
                                     timeEntry.epicKey = epic == null ? null : epic.jiraKey;
-                                    timeEntry.author = author;
+                                    String convertedAuthor = userConversion.get(author);
+                                    if(convertedAuthor == null)
+                                        convertedAuthor = author;
+                                    timeEntry.author = convertedAuthor;
                                     timeEntry.created = created;
                                     timeEntry.timeSpent = timeSpent;
                                     timeEntries.add(timeEntry);
